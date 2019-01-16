@@ -164,7 +164,7 @@ textarea {
 %endif
 
 %if msg:
-    <p>${msg}</p>
+    <p>${msg | n, decode.utf8}</p>
 %endif
 
 %if datatable:
@@ -192,6 +192,5 @@ textarea {
 %endif
   </section>
   <div style="text-align:right; float: right"><span id="djangopid">'Django PID': ${djangopid}</span>
-  </div>
 </div>
 </section>
