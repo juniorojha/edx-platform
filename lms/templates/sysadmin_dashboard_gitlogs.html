@@ -21,9 +21,9 @@
                   duration: 200
               });
               if (self.html() === "[ + ]") {
-                  self.text("[ &#8722; ]");
+                  self.html("[ &#8722; ]");
               } else {
-                  self.text("[ + ]");
+                  self.html("[ + ]");
               }
               e.preventDefault();
           });
