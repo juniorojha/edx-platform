@@ -556,7 +556,11 @@ class GradebookView(GradeViewMixin, PaginatedAPIView):
                     users, course_key=course_key, collected_block_structure=course_data.collected_structure
                 ):
                     if not exc:
-                        entries.append(self._gradebook_entry(user, course, graded_subsections, course_grade))
+                        enrollment = CourseEnrollment._get_enrollment_state(user, course_key)[0]
+                        entry = self._gradebook_entry(user, course, graded_subsections, course_grade)
+                        if enrollment != 'masters':
+                            entry['email'] = ""
+                        entries.append(entry)
 
             serializer = StudentGradebookEntrySerializer(entries, many=True)
             return self.get_paginated_response(serializer.data)
