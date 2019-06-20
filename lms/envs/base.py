@@ -602,6 +602,9 @@ OAUTH2_PROVIDER_APPLICATION_MODEL = 'oauth2_provider.Application'
 # Automatically clean up edx-django-oauth2-provider tokens on use
 OAUTH_DELETE_EXPIRED = True
 OAUTH_ID_TOKEN_EXPIRATION = 60 * 60
+OAUTH_ENFORCE_SECURE = True
+OAUTH_EXPIRE_CONFIDENTIAL_CLIENT_DAYS = 365
+OAUTH_EXPIRE_PUBLIC_CLIENT_DAYS = 30
 
 ################################## THIRD_PARTY_AUTH CONFIGURATION #############################
 TPA_PROVIDER_BURST_THROTTLE = '10/min'
@@ -762,6 +765,10 @@ ELASTIC_SEARCH_CONFIG = [
     }
 ]
 
+VIDEO_CDN_URL = {
+    'EXAMPLE_COUNTRY_CODE': "http://example.com/edx/video?s3_url="
+}
+
 STATIC_ROOT_BASE = '/edx/var/edxapp/staticfiles'
 
 LOGGING_ENV = 'sandbox'
@@ -782,6 +789,8 @@ LOG_DIR = '/edx/var/log/edx'
 DATA_DIR = '/edx/app/edxapp'
 
 MAINTENANCE_BANNER_TEXT = 'Sample banner message'
+
+GIT_REPO_DIR = '/edx/var/edxapp/course_repos'
 
 ### Dark code. Should be enabled in local settings for devel.
 
@@ -921,7 +930,7 @@ TRACKING_SEGMENTIO_SOURCE_MAP = {
 
 ######################## GOOGLE ANALYTICS ###########################
 GOOGLE_ANALYTICS_ACCOUNT = None
-GOOGLE_SITE_VERIFICATION_ID = None
+GOOGLE_SITE_VERIFICATION_ID = ''
 GOOGLE_ANALYTICS_LINKEDIN = 'GOOGLE_ANALYTICS_LINKEDIN_DUMMY'
 
 ######################## BRANCH.IO ###########################
@@ -1050,7 +1059,7 @@ STUDIO_NAME = 'Studio'
 STUDIO_SHORT_NAME = 'Studio'
 
 # Site info
-SITE_NAME = "example.com"
+SITE_NAME = "localhost"
 HTTPS = 'on'
 ROOT_URLCONF = 'lms.urls'
 # NOTE: Please set ALLOWED_HOSTS to some sane value, as we do not allow the default '*'
@@ -1071,7 +1080,7 @@ PRESS_EMAIL = 'press@example.com'
 FINANCE_EMAIL = ''
 
 # Platform mailing address
-CONTACT_MAILING_ADDRESS = ''
+CONTACT_MAILING_ADDRESS = 'SET-ME-PLEASE'
 
 # Account activation email sender address
 ACTIVATION_EMAIL_FROM_ADDRESS = ''
@@ -1082,6 +1091,7 @@ MANAGERS = ADMINS
 # Static content
 STATIC_URL = '/static/'
 STATIC_ROOT = ENV_ROOT / "staticfiles"
+STATIC_URL_BASE = '/static/'
 
 STATICFILES_DIRS = [
     COMMON_ROOT / "static",
@@ -2686,6 +2696,8 @@ GRADES_DOWNLOAD_ROUTING_KEY = HIGH_MEM_QUEUE
 
 POLICY_CHANGE_GRADES_ROUTING_KEY = 'edx.lms.core.default'
 
+RECALCULATE_GRADES_ROUTING_KEY = 'edx.lms.core.default'
+
 GRADES_DOWNLOAD = {
     'STORAGE_CLASS': 'django.core.files.storage.FileSystemStorage',
     'STORAGE_KWARGS': {
@@ -3065,12 +3077,12 @@ ENROLLMENT_COURSE_DETAILS_CACHE_TIMEOUT = 60
 NOTES_DISABLED_TABS = ['course_structure', 'tags']
 
 # Configuration used for generating PDF Receipts/Invoices
-PDF_RECEIPT_TAX_ID = 'add here'
-PDF_RECEIPT_FOOTER_TEXT = 'add your own specific footer text here'
-PDF_RECEIPT_DISCLAIMER_TEXT = 'add your own specific disclaimer text here'
-PDF_RECEIPT_BILLING_ADDRESS = 'add your own billing address here with appropriate line feed characters'
-PDF_RECEIPT_TERMS_AND_CONDITIONS = 'add your own terms and conditions'
-PDF_RECEIPT_TAX_ID_LABEL = 'Tax ID'
+PDF_RECEIPT_TAX_ID = '00-0000000'
+PDF_RECEIPT_FOOTER_TEXT = 'Enter your receipt footer text here.'
+PDF_RECEIPT_DISCLAIMER_TEXT = 'ENTER YOUR RECEIPT DISCLAIMER TEXT HERE.'
+PDF_RECEIPT_BILLING_ADDRESS = 'Enter your receipt terms and conditions here.'
+PDF_RECEIPT_TERMS_AND_CONDITIONS = 'Enter your receipt terms and conditions here.'
+PDF_RECEIPT_TAX_ID_LABEL = 'fake Tax ID'
 PDF_RECEIPT_LOGO_PATH = PROJECT_ROOT + '/static/images/openedx-logo-tag.png'
 # Height of the Logo in mm
 PDF_RECEIPT_LOGO_HEIGHT_MM = 12
@@ -3258,7 +3270,7 @@ CREDIT_PROVIDER_SECRET_KEYS = {}
 CREDIT_PROVIDER_TIMESTAMP_EXPIRATION = 15 * 60
 
 # The Help link to the FAQ page about the credit
-CREDIT_HELP_LINK_URL = "#"
+CREDIT_HELP_LINK_URL = "/"
 
 # Default domain for the e-mail address associated with users who are created
 # via the LTI Provider feature. Note that the generated e-mail addresses are
@@ -3453,6 +3465,7 @@ ENTERPRISE_SUPPORT_URL = ''
 # The default value of this needs to be a 16 character string
 ENTERPRISE_REPORTING_SECRET = '0000000000000000'
 ENTERPRISE_CUSTOMER_CATALOG_DEFAULT_CONTENT_FILTER = {}
+ENTERPRISE_CUSTOMER_SUCCESS_EMAIL = "customersuccess@edx.org"
 
 ############## ENTERPRISE SERVICE API CLIENT CONFIGURATION ######################
 # The LMS communicates with the Enterprise service via the EdxRestApiClient class
@@ -3632,9 +3645,10 @@ USERNAME_REPLACEMENT_WORKER = "REPLACE WITH VALID USERNAME"
 # modify lms/envs/private.py to give it a non-null value
 WRITABLE_GRADEBOOK_URL = None
 
-PROFILE_MICROFRONTEND_URL = "http://profile-mfe/abc/"
-ORDER_HISTORY_MICROFRONTEND_URL = "http://order-history-mfe/"
-ACCOUNT_MICROFRONTEND_URL = "http://account-mfe/"
+PROFILE_MICROFRONTEND_URL = None
+ORDER_HISTORY_MICROFRONTEND_URL = None
+ACCOUNT_MICROFRONTEND_URL = None
+PROGRAM_MANAGER_MICROFRONTEND_URL = None
 
 ############### Settings for django-fernet-fields ##################
 FERNET_KEYS = [
@@ -3664,3 +3678,7 @@ VIDEO_UPLOAD_PIPELINE = {
 
 ############### Settings for django file storage ##################
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+
+# Mailchimp User List
+MAILCHIMP_NEW_USER_LIST_ID = None
