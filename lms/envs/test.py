@@ -12,22 +12,31 @@ sessions. Assumes structure:
 # We intentionally define lots of variables that aren't used, and
 # want to import all variables from base settings files
 # pylint: disable=wildcard-import, unused-wildcard-import
-from collections import OrderedDict
+from __future__ import absolute_import
 
-from django.utils.translation import ugettext_lazy
-
-from .common import *
+import logging
 import os
-from path import Path as path
+from collections import OrderedDict
+from random import choice
+from string import digits, letters, punctuation
 from uuid import uuid4
 
-from util.db import NoOpMigrationModules
+import openid.oidutil
+from django.utils.translation import ugettext_lazy
+from path import Path as path
+from six.moves import range
+
+from openedx.core.djangoapps.plugins import plugin_settings, constants as plugin_constants
 from openedx.core.lib.derived import derive_settings
 from openedx.core.lib.tempdir import mkdtemp_clean
 
+from .common import *
+
+from util.db import NoOpMigrationModules  # pylint: disable=wrong-import-order
+from util.testing import patch_sessions, patch_testcase  # pylint: disable=wrong-import-order
+
 # This patch disables the commit_on_success decorator during tests
 # in TestCase subclasses.
-from util.testing import patch_testcase, patch_sessions
 patch_testcase()
 patch_sessions()
 
@@ -37,7 +46,6 @@ ALLOWED_HOSTS = [
 ]
 
 # Silence noisy logs to make troubleshooting easier when tests fail.
-import logging
 LOG_OVERRIDES = [
     ('factory.generate', logging.ERROR),
     ('factory.containers', logging.ERROR),
@@ -124,6 +132,14 @@ XQUEUE_WAITTIME_BETWEEN_REQUESTS = 5  # seconds
 # Don't rely on a real staff grading backend
 MOCK_STAFF_GRADING = True
 MOCK_PEER_GRADING = True
+
+COMMENTS_SERVICE_URL = 'http://localhost:4567'
+
+DJFS = {
+    'type': 'osfs',
+    'directory_root': '{}/django-pyfs/static/django-pyfs'.format(DATA_DIR),
+    'url_root': '/static/django-pyfs',
+}
 
 ############################ STATIC FILES #############################
 
@@ -261,6 +277,7 @@ OPENID_PROVIDER_TRUSTED_ROOTS = ['*']
 FEATURES['ENABLE_OAUTH2_PROVIDER'] = True
 # don't cache courses for testing
 OIDC_COURSE_HANDLER_CACHE_TIMEOUT = 0
+OAUTH_ENFORCE_SECURE = False
 
 ########################### External REST APIs #################################
 FEATURES['ENABLE_MOBILE_REST_API'] = True
@@ -274,8 +291,6 @@ FEATURES['ENABLE_PAYMENT_FAKE'] = True
 # Since both the fake payment page and the shoppingcart app are using
 # the same settings, we can generate this randomly and guarantee
 # that they are using the same secret.
-from random import choice
-from string import letters, digits, punctuation
 RANDOM_SHARED_SECRET = ''.join(
     choice(letters + digits + punctuation)
     for x in range(250)
@@ -389,9 +404,9 @@ FEATURES['CLASS_DASHBOARD'] = True
 ################### Make tests quieter
 
 # OpenID spews messages like this to stderr, we don't need to see them:
-#   Generated checkid_setup request to http://testserver/openid/provider/login/ with assocication {HMAC-SHA1}{51d49995}{s/kRmA==}
+# Generated checkid_setup request to http://testserver/openid/provider/login/
+# With assocication {HMAC-SHA1}{51d49995}{s/kRmA==}
 
-import openid.oidutil
 openid.oidutil.log = lambda message, level=0: None
 
 
@@ -553,12 +568,14 @@ COURSE_CATALOG_API_URL = 'https://catalog.example.com/api/v1'
 
 COMPREHENSIVE_THEME_DIRS = [REPO_ROOT / "themes", REPO_ROOT / "common/test"]
 COMPREHENSIVE_THEME_LOCALE_PATHS = [REPO_ROOT / "themes/conf/locale", ]
+ENABLE_COMPREHENSIVE_THEMING = True
 
 LMS_ROOT_URL = "http://localhost:8000"
 
 FRONTEND_LOGOUT_URL = LMS_ROOT_URL + '/logout'
 
 ECOMMERCE_API_URL = 'https://ecommerce.example.com/api/v2/'
+ECOMMERCE_PUBLIC_URL_ROOT = None
 ENTERPRISE_API_URL = 'http://enterprise.example.com/enterprise/api/v1/'
 ENTERPRISE_CONSENT_API_URL = 'http://enterprise.example.com/consent/api/v1/'
 
@@ -607,7 +624,6 @@ JWT_AUTH.update({
 # pylint: enable=unicode-format-string
 ####################### Plugin Settings ##########################
 
-from openedx.core.djangoapps.plugins import plugin_settings, constants as plugin_constants
 plugin_settings.add_plugins(__name__, plugin_constants.ProjectType.LMS, plugin_constants.SettingsType.TEST)
 
 ########################## Derive Any Derived Settings  #######################
@@ -616,3 +632,30 @@ derive_settings(__name__)
 
 ############### Settings for edx-rbac  ###############
 SYSTEM_WIDE_ROLE_CLASSES = os.environ.get("SYSTEM_WIDE_ROLE_CLASSES", [])
+
+###################### Grade Downloads ######################
+# These keys are used for all of our asynchronous downloadable files, including
+# the ones that contain information other than grades.
+
+GRADES_DOWNLOAD = {
+    'STORAGE_TYPE': 'localfs',
+    'BUCKET': 'edx-grades',
+    'ROOT_PATH': '/tmp/edx-s3/grades',
+}
+
+# Configuration used for generating PDF Receipts/Invoices
+
+PDF_RECEIPT_TAX_ID = 'add here'
+PDF_RECEIPT_FOOTER_TEXT = 'add your own specific footer text here'
+PDF_RECEIPT_DISCLAIMER_TEXT = 'add your own specific disclaimer text here'
+PDF_RECEIPT_BILLING_ADDRESS = 'add your own billing address here with appropriate line feed characters'
+PDF_RECEIPT_TERMS_AND_CONDITIONS = 'add your own terms and conditions'
+PDF_RECEIPT_TAX_ID_LABEL = 'Tax ID'
+
+PROFILE_MICROFRONTEND_URL = "http://profile-mfe/abc/"
+ORDER_HISTORY_MICROFRONTEND_URL = "http://order-history-mfe/"
+ACCOUNT_MICROFRONTEND_URL = "http://account-mfe/"
+
+########################## limiting dashboard courses ######################
+
+DASHBOARD_COURSE_LIMIT = 250

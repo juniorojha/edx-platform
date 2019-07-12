@@ -1749,8 +1749,8 @@ class RegistrationCodeRedemptionCourseEnrollment(SharedModuleStoreTestCase):
         response = self.client.post(url)
         self.assertEquals(response.status_code, 403)
 
-        # now reset the time to 5 mins from now in future in order to unblock
-        reset_time = datetime.now(UTC) + timedelta(seconds=300)
+        # now reset the time to 6 mins from now in future in order to unblock
+        reset_time = datetime.now(UTC) + timedelta(seconds=361)
         with freeze_time(reset_time):
             response = self.client.post(url)
             self.assertEquals(response.status_code, 404)
@@ -1773,8 +1773,8 @@ class RegistrationCodeRedemptionCourseEnrollment(SharedModuleStoreTestCase):
         response = self.client.get(url)
         self.assertEquals(response.status_code, 403)
 
-        # now reset the time to 5 mins from now in future in order to unblock
-        reset_time = datetime.now(UTC) + timedelta(seconds=300)
+        # now reset the time to 6 mins from now in future in order to unblock
+        reset_time = datetime.now(UTC) + timedelta(seconds=361)
         with freeze_time(reset_time):
             response = self.client.get(url)
             self.assertEquals(response.status_code, 404)
@@ -1824,11 +1824,11 @@ class RegistrationCodeRedemptionCourseEnrollment(SharedModuleStoreTestCase):
         RegistrationCodeRedemption.objects.filter(registration_code__code=registration_code)
         response = self.client.get(redeem_url)
         self.assertEquals(len(RegistrationCodeRedemption.objects.filter(registration_code__code=registration_code)), 1)
-        self.assertIn("You've clicked a link for an enrollment code that has already been used.", response.content)
+        self.assertIn("You&#39;ve clicked a link for an enrollment code that has already been used.", response.content)
 
         #now check that the registration code has already been redeemed
         response = self.client.post(redeem_url)
-        self.assertIn("You've clicked a link for an enrollment code that has already been used.", response.content)
+        self.assertIn("You&#39;ve clicked a link for an enrollment code that has already been used.", response.content)
 
         #now check the response of the dashboard page
         dashboard_url = reverse('dashboard')

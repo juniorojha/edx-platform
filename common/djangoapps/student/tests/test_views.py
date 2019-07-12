@@ -516,7 +516,7 @@ class StudentDashboardTests(SharedModuleStoreTestCase, MilestonesTestCaseMixin, 
         course_overview = CourseOverviewFactory(
             start=self.TOMORROW, self_paced=True, enrollment_end=self.TOMORROW
         )
-        course_enrollment = CourseEnrollmentFactory(user=self.user)
+        course_enrollment = CourseEnrollmentFactory(user=self.user, course_id=course_overview.id)
         entitlement = CourseEntitlementFactory(user=self.user, enrollment_course_run=course_enrollment)
         course_runs = [{
             'key': six.text_type(course_overview.id),
@@ -572,6 +572,23 @@ class StudentDashboardTests(SharedModuleStoreTestCase, MilestonesTestCaseMixin, 
             response = self.client.get(reverse('dashboard'))
             self.assertIn('You are not enrolled in any courses yet.', response.content)
             self.assertIn(empty_dashboard_message, response.content)
+
+    @patch('django.conf.settings.DASHBOARD_COURSE_LIMIT', 1)
+    def test_course_limit_on_dashboard(self):
+        course = CourseFactory.create()
+        CourseEnrollmentFactory(
+            user=self.user,
+            course_id=course.id
+        )
+
+        course_v1 = CourseFactory.create()
+        CourseEnrollmentFactory(
+            user=self.user,
+            course_id=course_v1.id
+        )
+
+        response = self.client.get(reverse('dashboard'))
+        self.assertIn('1 results successfully populated', response.content)
 
     @staticmethod
     def _remove_whitespace_from_html_string(html):

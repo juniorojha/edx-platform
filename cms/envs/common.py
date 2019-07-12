@@ -680,7 +680,7 @@ STATICFILES_DIRS = [
 
 # Locale/Internationalization
 CELERY_TIMEZONE = 'UTC'
-TIME_ZONE = 'America/New_York'  # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+TIME_ZONE = 'UTC'
 LANGUAGE_CODE = 'en'  # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGES_BIDI = lms.envs.common.LANGUAGES_BIDI
 
@@ -1128,6 +1128,9 @@ INSTALLED_APPS = [
     'lms.djangoapps.verify_student.apps.VerifyStudentConfig',
     'completion',
 
+    # System Wide Roles
+    'openedx.core.djangoapps.system_wide_roles',
+
     # Microsite configuration application
     'microsite_configuration',
 
@@ -1173,7 +1176,7 @@ INSTALLED_APPS = [
     'pipeline_mako',
 
     # API Documentation
-    'rest_framework_swagger',
+    'drf_yasg',
 
     'openedx.features.course_duration_limits',
     'openedx.features.content_type_gating',
@@ -1369,7 +1372,7 @@ ADVANCED_PROBLEM_TYPES = [
         'boilerplate_name': None
     },
     {
-        'component': 'staffgradedpoints',
+        'component': 'staffgradedxblock',
         'boilerplate_name': None
     }
 ]
@@ -1424,10 +1427,8 @@ ELASTIC_FIELD_MAPPINGS = {
 }
 
 XBLOCK_SETTINGS = {
-    "VideoDescriptor": {
-        "licensing_enabled": FEATURES.get("LICENSING", False)
-    },
-    'VideoModule': {
+    "VideoBlock": {
+        "licensing_enabled": FEATURES.get("LICENSING", False),
         'YOUTUBE_API_KEY': YOUTUBE_API_KEY
     }
 }

@@ -93,7 +93,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1a\n"
 "Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
-"POT-Creation-Date: 2019-06-09 20:42+0000\n"
+"POT-Creation-Date: 2019-07-07 20:42+0000\n"
 "PO-Revision-Date: 2019-01-20 20:43+0000\n"
 "Last-Translator: Waheed Ahmed <waheed@edx.org>, 2019\n"
 "Language-Team: Indonesian (https://www.transifex.com/open-edx/teams/6205/id/)\n"
@@ -966,6 +966,11 @@ msgstr ""
 "{html_start} Berhasil! Anda telah mengaktifkan akun Anda. {html_end} "
 "Sekarang Anda akan menerima email pembaruan dan peringatan dari kami terkait"
 " dengan kursus yang Anda ikuti. Sign In untuk melanjutkan."
+
+#: common/djangoapps/student/views/management.py
+msgid ""
+"Your previous request is in progress, please try again in a few moments."
+msgstr ""
 
 #: common/djangoapps/student/views/management.py
 msgid "Some error occured during password change. Please try again"
@@ -4812,14 +4817,6 @@ msgstr ""
 #: common/lib/xmodule/xmodule/video_module/video_xfields.py
 msgid "Video Stop Time"
 msgstr "Waktu Berhenti Video"
-
-#: common/lib/xmodule/xmodule/video_module/video_xfields.py
-msgid "The external URL to download the video."
-msgstr "URL eksternal untuk unduh video."
-
-#: common/lib/xmodule/xmodule/video_module/video_xfields.py
-msgid "Download Video"
-msgstr "Unduh Video"
 
 #: common/lib/xmodule/xmodule/video_module/video_xfields.py
 msgid ""
@@ -9702,10 +9699,10 @@ msgid "You have signed out."
 msgstr "Anda sudah keluar."
 
 #: lms/templates/logout.html
-#, python-format
+#, python-brace-format
 msgid ""
-"If you are not redirected within 5 seconds, <a href=\"%(target)s\">click "
-"here to go to the home page</a>."
+"If you are not redirected within 5 seconds, {start_anchor}click here to go "
+"to the home page{end_anchor}."
 msgstr ""
 
 #: lms/templates/main_django.html cms/templates/base.html
@@ -10003,11 +10000,10 @@ msgid "Create new merged version"
 msgstr "Buat versi tergabung yang baru"
 
 #: lms/templates/wiki/includes/anonymous_blocked.html
-#: wiki/templates/wiki/includes/anonymous_blocked.html
-#, python-format
+#, python-brace-format
 msgid ""
-"You need to <a href=\"%(login_url)s\">log in</a> or <a "
-"href=\"%(signup_url)s\">sign up</a> to use this function."
+"You need to {anchor_start_login}log in{anchor_end} or "
+"{anchor_start_signup}sign up{anchor_end} to use this function."
 msgstr ""
 
 #: lms/templates/wiki/includes/anonymous_blocked.html
@@ -10023,12 +10019,12 @@ msgid "Wiki Syntax Help"
 msgstr "Bantuan Sintaks Wiki"
 
 #: lms/templates/wiki/includes/cheatsheet.html
+#, python-brace-format
 msgid ""
-"This wiki uses <strong>Markdown</strong> for styling. There are several "
-"useful guides online. See any of the links below for in-depth details:"
+"This wiki uses {start_strong}Markdown{end_strong} for styling. There are "
+"several useful guides online. See any of the links below for in-depth "
+"details:"
 msgstr ""
-"Wiki ini menggunakan <strong>Markdown</strong> untuk gaya. Ada beberapa "
-"panduan online yang berguna. Lihat tautan di bawah untuk detil lengkapnya:"
 
 #: lms/templates/wiki/includes/cheatsheet.html
 msgid "Markdown: Basics"
@@ -11341,10 +11337,6 @@ msgstr ""
 msgid "The email address you used to register with {platform_name}"
 msgstr "Alamat email yang anda gunakan untuk mendaftar di {platform_name}"
 
-#: openedx/core/djangoapps/user_api/api.py lms/templates/login.html
-msgid "Remember me"
-msgstr "Ingat saya"
-
 #. Translators: These instructions appear on the registration form,
 #. immediately
 #. below a field meant to hold the user's email address.
@@ -11936,6 +11928,13 @@ msgstr ""
 
 #: openedx/features/discounts/models.py
 msgid "Disabled"
+msgstr ""
+
+#: openedx/features/discounts/utils.py
+#, python-brace-format
+msgid ""
+"{s_sr}Original price: {s_op}{original_price}{e_p}, discount price: "
+"{e_sr}{formatted_discount_price}"
 msgstr ""
 
 #: openedx/features/enterprise_support/api.py
@@ -13138,6 +13137,14 @@ msgid "Dashboard"
 msgstr "Dashboard"
 
 #: lms/templates/dashboard.html themes/edx.org/lms/templates/dashboard.html
+msgid "results successfully populated,"
+msgstr ""
+
+#: lms/templates/dashboard.html themes/edx.org/lms/templates/dashboard.html
+msgid "Click to load all enrolled courses"
+msgstr ""
+
+#: lms/templates/dashboard.html themes/edx.org/lms/templates/dashboard.html
 msgid "You are not enrolled in any courses yet."
 msgstr "Anda belum terdaftar di kursus yang ada"
 
@@ -13616,16 +13623,9 @@ msgstr "Sebuah kesalahan terjadi ketika Anda masuk {platform_name}."
 #: lms/templates/login.html
 msgid ""
 "Please provide the following information to log into your {platform_name} "
-"account. Required fields are noted by <strong class=\"indicator\">bold text "
-"and an asterisk (*)</strong>."
+"account. Required fields are noted by {strong_start}bold text and an "
+"asterisk (*){strong_end}."
 msgstr ""
-"Harap berikan informasi berikut untuk masuk ke akun {platform_name}. Isian "
-"yang dibutuhkan ditandai dengan <strong class=\"indicator\">teks tebal dan "
-"tanda bintang (*)</strong>."
-
-#: lms/templates/login.html
-msgid "Account Preferences"
-msgstr "Preferensi Akun"
 
 #: lms/templates/login.html
 msgid "Sign in with {provider_name}"
@@ -13858,7 +13858,7 @@ msgstr "Daftar menggunakan {provider_name}"
 msgid "Create your own {platform_name} account below"
 msgstr "Buat akun anda {platform_name} di bawah"
 
-#: lms/templates/register-form.html lms/templates/register-shib.html
+#: lms/templates/register-form.html
 #: themes/stanford-style/lms/templates/register-form.html
 #: themes/stanford-style/lms/templates/register-shib.html
 msgid ""
@@ -13979,6 +13979,12 @@ msgstr "Perbaharui Akun {platform_name} saya"
 #: themes/stanford-style/lms/templates/register-shib.html
 msgid "Welcome {username}!  Please set your preferences below"
 msgstr "Selamat datang {username}! Harap tentukan pilihan Anda di bawah"
+
+#: lms/templates/register-shib.html
+msgid ""
+"Required fields are noted by {strong_start}bold text and an asterisk "
+"(*){strong_end}."
+msgstr ""
 
 #: lms/templates/register-shib.html lms/templates/signup_modal.html
 #: themes/stanford-style/lms/templates/register-shib.html
@@ -14135,8 +14141,8 @@ msgid "e.g. Your Name (for certificates)"
 msgstr "mis. Nama Anda (untuk sertifikat)"
 
 #: lms/templates/signup_modal.html
-msgid "<i>Welcome</i> {name}"
-msgstr "<i>Selamat Datang</i> {name}"
+msgid "{start_li}Welcome{end_li} {name}"
+msgstr ""
 
 #: lms/templates/signup_modal.html
 msgid "Full Name *"
@@ -16258,8 +16264,8 @@ msgstr ""
 "USD){end_span}"
 
 #: lms/templates/courseware/course_about.html
-msgid "Enroll in {course_name}"
-msgstr "Mendaftar untuk {course_name}"
+msgid "Enroll Now"
+msgstr ""
 
 #: lms/templates/courseware/course_about.html
 msgid "View About Page in studio"
@@ -18277,6 +18283,7 @@ msgid "Journals"
 msgstr "Jurnal"
 
 #: lms/templates/header/navbar-authenticated.html
+#: themes/edx.org/lms/templates/header/navbar-authenticated.html
 msgid "Discover New"
 msgstr "Temukan Baru"
 
@@ -25931,6 +25938,13 @@ msgstr ""
 
 #: wiki/templates/wiki/article/create_root.html
 msgid "Create root"
+msgstr ""
+
+#: wiki/templates/wiki/includes/anonymous_blocked.html
+#, python-format
+msgid ""
+"You need to <a href=\"%(login_url)s\">log in</a> or <a "
+"href=\"%(signup_url)s\">sign up</a> to use this function."
 msgstr ""
 
 #: wiki/templates/wiki/includes/anonymous_blocked.html

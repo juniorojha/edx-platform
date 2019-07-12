@@ -28,6 +28,7 @@ from lms.djangoapps.program_enrollments.api.v1.constants import (
     CourseEnrollmentResponseStatuses as CourseStatuses,
     CourseRunProgressStatuses,
     MAX_ENROLLMENT_RECORDS,
+    ProgramEnrollmentResponseStatuses as ProgramStatuses,
     REQUEST_STUDENT_KEY,
 )
 from lms.djangoapps.program_enrollments.tests.factories import ProgramCourseEnrollmentFactory, ProgramEnrollmentFactory
@@ -336,6 +337,9 @@ class BaseCourseEnrollmentTestsMixin(ProgramCacheTestCaseMixin):
     def request(self, path, data):
         pass
 
+    def prepare_student(self, key):
+        pass
+
     def create_program_enrollment(self, external_user_key, user=False):
         """
         Creates and returns a ProgramEnrollment for the given external_user_key and
@@ -474,7 +478,7 @@ class BaseCourseEnrollmentTestsMixin(ProgramCacheTestCaseMixin):
     )
     def test_422_unprocessable_entity_bad_data(self, request_data):
         response = self.request(self.default_url, request_data)
-        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.status_code, 400)
         self.assertIn('invalid enrollment record', response.data)
 
     @ddt.data(
@@ -487,8 +491,21 @@ class BaseCourseEnrollmentTestsMixin(ProgramCacheTestCaseMixin):
         request_data.extend(bad_records)
         response = self.request(self.default_url, request_data)
 
-        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertEqual(response.status_code, 400)
         self.assertIn('invalid enrollment record', response.data)
+
+    def test_extra_field(self):
+        self.prepare_student('learner-1')
+        enrollment = self.learner_enrollment('learner-1', 'inactive')
+        enrollment['favorite_author'] = 'Hemingway'
+        request_data = [enrollment]
+        response = self.request(self.default_url, request_data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(
+            response.data,
+            {'learner-1': 'inactive'}
+        )
 
 
 class CourseEnrollmentPostTests(BaseCourseEnrollmentTestsMixin, APITestCase):
@@ -496,6 +513,9 @@ class CourseEnrollmentPostTests(BaseCourseEnrollmentTestsMixin, APITestCase):
 
     def request(self, path, data):
         return self.client.post(path, data, format='json')
+
+    def prepare_student(self, key):
+        self.create_program_enrollment(key)
 
     def test_create_enrollments(self):
         self.create_program_enrollment('learner-1')
@@ -574,16 +594,20 @@ class CourseEnrollmentPostTests(BaseCourseEnrollmentTestsMixin, APITestCase):
 
 
 @ddt.ddt
-class CourseEnrollmentPatchTests(BaseCourseEnrollmentTestsMixin, APITestCase):
-    """ Tests for course enrollment PATCH """
+class CourseEnrollmentModificationTestBase(BaseCourseEnrollmentTestsMixin):
+    """
+    Base class for both the PATCH and PUT endpoints for Course Enrollment API
+    Children needs to implement assert_user_not_enrolled_test_result and
+    setup_change_test_data
+    """
 
-    def request(self, path, data):
-        return self.client.patch(path, data, format='json')
+    def prepare_student(self, key):
+        self.create_program_and_course_enrollments(key)
 
     def test_207_multistatus(self):
         self.create_program_and_course_enrollments('learner-1')
-        post_data = [self.learner_enrollment("learner-1"), self.learner_enrollment("learner-2")]
-        response = self.request(self.default_url, post_data)
+        mod_data = [self.learner_enrollment("learner-1"), self.learner_enrollment("learner-2")]
+        response = self.request(self.default_url, mod_data)
         self.assertEqual(207, response.status_code)
         self.assertDictEqual(
             {'learner-1': CourseStatuses.ACTIVE, 'learner-2': CourseStatuses.NOT_IN_PROGRAM},
@@ -594,8 +618,13 @@ class CourseEnrollmentPatchTests(BaseCourseEnrollmentTestsMixin, APITestCase):
         self.create_program_enrollment('learner-1')
         patch_data = [self.learner_enrollment('learner-1')]
         response = self.request(self.default_url, patch_data)
-        self.assertEqual(422, response.status_code)
-        self.assertDictEqual({'learner-1': CourseStatuses.NOT_FOUND}, response.data)
+        self.assert_user_not_enrolled_test_result(response)
+
+    def assert_user_not_enrolled_test_result(self, response):
+        pass
+
+    def setup_change_test_data(self, initial_statuses):
+        pass
 
     @ddt.data(
         ('active', 'inactive', 'active', 'inactive'),
@@ -604,17 +633,14 @@ class CourseEnrollmentPatchTests(BaseCourseEnrollmentTestsMixin, APITestCase):
         ('inactive', 'inactive', 'inactive', 'inactive'),
     )
     def test_change_status(self, initial_statuses):
-        self.create_program_and_course_enrollments('learner-1', course_status=initial_statuses[0])
-        self.create_program_and_course_enrollments('learner-2', course_status=initial_statuses[1])
-        self.create_program_and_course_enrollments('learner-3', course_status=initial_statuses[2], user=None)
-        self.create_program_and_course_enrollments('learner-4', course_status=initial_statuses[3], user=None)
-        patch_data = [
+        self.setup_change_test_data(initial_statuses)
+        mod_data = [
             self.learner_enrollment('learner-1', 'inactive'),
             self.learner_enrollment('learner-2', 'active'),
             self.learner_enrollment('learner-3', 'inactive'),
             self.learner_enrollment('learner-4', 'active'),
         ]
-        response = self.request(self.default_url, patch_data)
+        response = self.request(self.default_url, mod_data)
         self.assertEqual(200, response.status_code)
         self.assertDictEqual(
             {
@@ -629,6 +655,40 @@ class CourseEnrollmentPatchTests(BaseCourseEnrollmentTestsMixin, APITestCase):
         self.assert_program_course_enrollment('learner-2', 'active', True)
         self.assert_program_course_enrollment('learner-3', 'inactive', False)
         self.assert_program_course_enrollment('learner-4', 'active', False)
+
+
+class CourseEnrollmentPatchTests(CourseEnrollmentModificationTestBase, APITestCase):
+    """ Tests for course enrollment PATCH """
+
+    def request(self, path, data):
+        return self.client.patch(path, data, format='json')
+
+    def assert_user_not_enrolled_test_result(self, response):
+        self.assertEqual(422, response.status_code)
+        self.assertDictEqual({'learner-1': CourseStatuses.NOT_FOUND}, response.data)
+
+    def setup_change_test_data(self, initial_statuses):
+        self.create_program_and_course_enrollments('learner-1', course_status=initial_statuses[0])
+        self.create_program_and_course_enrollments('learner-2', course_status=initial_statuses[1])
+        self.create_program_and_course_enrollments('learner-3', course_status=initial_statuses[2], user=None)
+        self.create_program_and_course_enrollments('learner-4', course_status=initial_statuses[3], user=None)
+
+
+class CourseEnrollmentPutTests(CourseEnrollmentModificationTestBase, APITestCase):
+    """ Tests for course enrollment PUT """
+
+    def request(self, path, data):
+        return self.client.put(path, data, format='json')
+
+    def assert_user_not_enrolled_test_result(self, response):
+        self.assertEqual(200, response.status_code)
+        self.assertDictEqual({'learner-1': CourseStatuses.ACTIVE}, response.data)
+
+    def setup_change_test_data(self, initial_statuses):
+        self.create_program_and_course_enrollments('learner-1', course_status=initial_statuses[0])
+        self.create_program_enrollment('learner-2')
+        self.create_program_enrollment('learner-3', user=None)
+        self.create_program_and_course_enrollments('learner-4', course_status=initial_statuses[3], user=None)
 
 
 class ProgramCourseEnrollmentListTest(ListViewTestMixin, APITestCase):
@@ -764,25 +824,140 @@ class ProgramCourseEnrollmentListTest(ListViewTestMixin, APITestCase):
 
 
 @ddt.ddt
-class ProgramEnrollmentViewPostTests(APITestCase):
+class BaseProgramEnrollmentWriteTestsMixin(object):
+    """ Mixin class that defines common tests for program enrollment write endpoints """
+    add_uuid = False
+    program_uuid = '00000000-1111-2222-3333-444444444444'
+    success_status = 200
+
+    def student_enrollment(self, enrollment_status, external_user_key=None, prepare_student=False):
+        """ Convenience method to create a student enrollment record """
+        enrollment = {
+            REQUEST_STUDENT_KEY: external_user_key or str(uuid4().hex[0:10]),
+            'status': enrollment_status,
+        }
+        if self.add_uuid:
+            enrollment['curriculum_uuid'] = str(uuid4())
+        if prepare_student:
+            self.prepare_student(enrollment)
+        return enrollment
+
+    def prepare_student(self, enrollment):
+        pass
+
+    def get_url(self, program_uuid=None):
+        if program_uuid is None:
+            program_uuid = uuid4()
+        return reverse('programs_api:v1:program_enrollments', args=[program_uuid])
+
+    def test_unauthenticated(self):
+        self.client.logout()
+        request_data = [self.student_enrollment('enrolled')]
+        response = self.request(self.get_url(), json.dumps(request_data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_enrollment_payload_limit(self):
+        request_data = [self.student_enrollment('enrolled') for _ in range(MAX_ENROLLMENT_RECORDS + 1)]
+        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
+            response = self.request(self.get_url(), json.dumps(request_data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+
+    def test_duplicate_enrollment(self):
+        request_data = [
+            self.student_enrollment('enrolled', '001'),
+            self.student_enrollment('enrolled', '001'),
+        ]
+
+        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
+            response = self.request(self.get_url(), json.dumps(request_data), content_type='application/json')
+
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertEqual(response.data, {'001': 'duplicated'})
+
+    def test_unprocessable_enrollment(self):
+        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
+            response = self.request(
+                self.get_url(),
+                json.dumps([{'status': 'enrolled'}]),
+                content_type='application/json'
+            )
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertEqual(response.data, 'invalid enrollment record')
+
+    def test_program_unauthorized(self):
+        student = UserFactory.create(password='password')
+        self.client.login(username=student.username, password='password')
+
+        request_data = [self.student_enrollment('enrolled')]
+        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
+            response = self.request(self.get_url(), json.dumps(request_data), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_program_not_found(self):
+        post_data = [self.student_enrollment('enrolled')]
+        nonexistant_uuid = uuid4()
+        response = self.request(
+            self.get_url(program_uuid=nonexistant_uuid),
+            json.dumps(post_data),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    @ddt.data(
+        [{'status': 'pending'}],
+        [{'status': 'not-a-status'}],
+        [{'status': 'pending'}, {'status': 'pending'}],
+    )
+    def test_no_student_key(self, bad_records):
+        program_uuid = uuid4()
+        url = reverse('programs_api:v1:program_enrollments', args=[program_uuid])
+        enrollments = [self.student_enrollment('enrolled', '001', True)]
+        enrollments.extend(bad_records)
+
+        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
+            response = self.request(url, json.dumps(enrollments), content_type='application/json')
+
+        self.assertEqual(422, response.status_code)
+        self.assertEqual('invalid enrollment record', response.data)
+
+    def test_extra_field(self):
+        self.student_enrollment('pending', 'learner-01', prepare_student=True)
+        enrollment = self.student_enrollment('enrolled', 'learner-01')
+        enrollment['favorite_pokemon'] = 'bulbasaur'
+        enrollments = [enrollment]
+        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
+            with mock.patch(
+                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
+                autospec=True,
+                return_value=None
+            ):
+                url = self.get_url(program_uuid=self.program_uuid)
+                response = self.request(url, json.dumps(enrollments), content_type='application/json')
+        self.assertEqual(self.success_status, response.status_code)
+        self.assertDictEqual(
+            response.data,
+            {'learner-01': 'enrolled'}
+        )
+
+
+@ddt.ddt
+class ProgramEnrollmentViewPostTests(BaseProgramEnrollmentWriteTestsMixin, APITestCase):
     """
     Tests for the ProgramEnrollment view POST method.
     """
+    add_uuid = True
+    success_status = status.HTTP_201_CREATED
+    success_status = 201
+
     def setUp(self):
         super(ProgramEnrollmentViewPostTests, self).setUp()
+        self.request = self.client.post
         global_staff = GlobalStaffFactory.create(username='global-staff', password='password')
         self.client.login(username=global_staff.username, password='password')
 
     def tearDown(self):
         super(ProgramEnrollmentViewPostTests, self).tearDown()
         ProgramEnrollment.objects.all().delete()
-
-    def student_enrollment(self, enrollment_status, external_user_key=None):
-        return {
-            REQUEST_STUDENT_KEY: external_user_key or str(uuid4().hex[0:10]),
-            'status': enrollment_status,
-            'curriculum_uuid': str(uuid4())
-        }
 
     def test_successful_program_enrollments_no_existing_user(self):
         program_key = uuid4()
@@ -886,190 +1061,19 @@ class ProgramEnrollmentViewPostTests(APITestCase):
             self.assertEqual(enrollment.curriculum_uuid, curriculum_uuid)
             self.assertIsNone(enrollment.user)
 
-    def test_enrollment_payload_limit(self):
-
-        post_data = []
-        for _ in range(MAX_ENROLLMENT_RECORDS + 1):
-            post_data += self.student_enrollment('enrolled')
-
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            with mock.patch(
-                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
-                autospec=True,
-                return_value=None
-            ):
-                response = self.client.post(url, json.dumps(post_data), content_type='application/json')
-        self.assertEqual(response.status_code, status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
-
-    def test_duplicate_enrollment(self):
-        post_data = [
-            self.student_enrollment('enrolled', '001'),
-            self.student_enrollment('enrolled', '002'),
-            self.student_enrollment('enrolled', '001'),
-        ]
-
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            with mock.patch(
-                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
-                autospec=True,
-                return_value=None
-            ):
-                response = self.client.post(url, json.dumps(post_data), content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_207_MULTI_STATUS)
-        self.assertEqual(response.data, {
-            '001': 'duplicated',
-            '002': 'enrolled',
-        })
-
-    def test_unprocessable_enrollment(self):
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            with mock.patch(
-                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
-                autospec=True,
-                return_value=None
-            ):
-                response = self.client.post(
-                    url,
-                    json.dumps([{'status': 'enrolled'}]),
-                    content_type='application/json'
-                )
-
-        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-    def test_unauthenticated(self):
-        self.client.logout()
-        post_data = [
-            self.student_enrollment('enrolled')
-        ]
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        response = self.client.post(
-            url,
-            json.dumps(post_data),
-            content_type='application/json'
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_program_unauthorized(self):
-        student = UserFactory.create(username='student', password='password')
-        self.client.login(username=student.username, password='password')
-
-        post_data = [
-            self.student_enrollment('enrolled')
-        ]
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        response = self.client.post(
-            url,
-            json.dumps(post_data),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_program_not_found(self):
-        post_data = [
-            self.student_enrollment('enrolled')
-        ]
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        response = self.client.post(
-            url,
-            json.dumps(post_data),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_partially_valid_enrollment(self):
-
-        post_data = [
-            self.student_enrollment('new', '001'),
-            self.student_enrollment('pending', '003'),
-        ]
-
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            with mock.patch(
-                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
-                autospec=True,
-                return_value=None
-            ):
-                response = self.client.post(url, json.dumps(post_data), content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_207_MULTI_STATUS)
-        self.assertEqual(response.data, {
-            '001': 'invalid-status',
-            '003': 'pending',
-        })
-
-    @ddt.data(REQUEST_STUDENT_KEY, 'status', 'curriculum_uuid')
-    def test_missing_field(self, removed_field):
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        enrollments = [
-            self.student_enrollment('enrolled') for _ in range(3)
-        ]
-        enrollments[2].pop(removed_field)
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            with mock.patch(
-                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
-                autospec=True,
-                return_value=None
-            ):
-                response = self.client.post(url, json.dumps(enrollments), content_type='application/json')
-
-        self.assertEqual(422, response.status_code)
-        self.assertEqual('invalid enrollment record', response.data)
-
-    @ddt.data(REQUEST_STUDENT_KEY, 'status', 'curriculum_uuid')
-    def test_none_field(self, none_field):
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        enrollments = [
-            self.student_enrollment('enrolled') for _ in range(3)
-        ]
-        enrollments[2][none_field] = None
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            with mock.patch(
-                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
-                autospec=True,
-                return_value=None
-            ):
-                response = self.client.post(url, json.dumps(enrollments), content_type='application/json')
-
-        self.assertEqual(422, response.status_code)
-        self.assertEqual('invalid enrollment record', response.data)
-
-    @ddt.data(
-        [{'status': 'pending'}],
-        [{'status': 'not-a-status'}],
-        [{'status': 'pending'}, {'status': 'pending'}],
-    )
-    def test_no_student_key(self, bad_records):
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        enrollments = [self.student_enrollment('enrolled')]
-        enrollments.extend(bad_records)
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            with mock.patch(
-                'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
-                autospec=True,
-                return_value=None
-            ):
-                response = self.client.post(url, json.dumps(enrollments), content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
-        self.assertEqual('invalid enrollment record', response.data)
-
 
 @ddt.ddt
-class ProgramEnrollmentViewPatchTests(APITestCase):
+class ProgramEnrollmentViewPatchTests(BaseProgramEnrollmentWriteTestsMixin, APITestCase):
     """
     Tests for the ProgramEnrollment view PATCH method.
     """
+    add_uuid = False
+    success_status = status.HTTP_200_OK
+
     def setUp(self):
         super(ProgramEnrollmentViewPatchTests, self).setUp()
+        self.request = self.client.patch
 
-        self.program_uuid = '00000000-1111-2222-3333-444444444444'
         self.curriculum_uuid = 'aaaaaaaa-1111-2222-3333-444444444444'
         self.other_curriculum_uuid = 'bbbbbbbb-1111-2222-3333-444444444444'
 
@@ -1082,11 +1086,14 @@ class ProgramEnrollmentViewPatchTests(APITestCase):
 
         self.client.login(username=self.global_staff.username, password=self.password)
 
-    def student_enrollment(self, enrollment_status, external_user_key=None):
-        return {
-            'status': enrollment_status,
-            REQUEST_STUDENT_KEY: external_user_key or str(uuid4().hex[0:10]),
-        }
+    def prepare_student(self, enrollment):
+        ProgramEnrollment.objects.create(
+            program_uuid=self.program_uuid,
+            curriculum_uuid=self.curriculum_uuid,
+            user=None,
+            status='pending',
+            external_user_key=enrollment[REQUEST_STUDENT_KEY],
+        )
 
     def test_successfully_patched_program_enrollment(self):
         enrollments = {}
@@ -1131,70 +1138,7 @@ class ProgramEnrollmentViewPatchTests(APITestCase):
         assert status.HTTP_200_OK == response.status_code
         assert expected_response == response.data
 
-    def test_enrollment_payload_limit(self):
-        patch_data = []
-        for _ in range(MAX_ENROLLMENT_RECORDS + 1):
-            patch_data += self.student_enrollment('enrolled')
-
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            response = self.client.patch(url, json.dumps(patch_data), content_type='application/json')
-
-        self.assertEqual(response.status_code, status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
-
-    def test_unauthenticated(self):
-        self.client.logout()
-        patch_data = [
-            self.student_enrollment('enrolled')
-        ]
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        response = self.client.patch(
-            url,
-            json.dumps(patch_data),
-            content_type='application/json'
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_program_unauthorized(self):
-        self.client.login(username=self.student.username, password=self.password)
-
-        patch_data = [
-            self.student_enrollment('enrolled')
-        ]
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        response = self.client.patch(
-            url,
-            json.dumps(patch_data),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_program_not_found(self):
-        patch_data = [
-            self.student_enrollment('enrolled')
-        ]
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-        response = self.client.patch(
-            url,
-            json.dumps(patch_data),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_unprocessable_enrollment(self):
-        url = reverse('programs_api:v1:program_enrollments', args=[uuid4()])
-
-        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            response = self.client.patch(
-                url,
-                json.dumps([{'status': 'enrolled'}]),
-                content_type='application/json'
-            )
-
-        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-    def test_duplicate_enrollment(self):
+    def test_duplicate_enrollment_record_changed(self):
         enrollments = {}
         for i in range(4):
             user_key = 'user-{}'.format(i)
@@ -1235,7 +1179,7 @@ class ProgramEnrollmentViewPatchTests(APITestCase):
             'user-2': 'enrolled',
         })
 
-    def test_partially_valid_enrollment(self):
+    def test_partially_valid_enrollment_record_changed(self):
         enrollments = {}
         for i in range(4):
             user_key = 'user-{}'.format(i)
@@ -1277,26 +1221,89 @@ class ProgramEnrollmentViewPatchTests(APITestCase):
             'user-who-is-not-in-program': 'not-in-program',
         })
 
-    @ddt.data(
-        [{'status': 'pending'}],
-        [{'status': 'not-a-status'}],
-        [{'status': 'pending'}, {'status': 'pending'}],
-    )
-    def test_no_student_key(self, bad_records):
-        program_uuid = uuid4()
-        url = reverse('programs_api:v1:program_enrollments', args=[program_uuid])
-        enrollments = [self.student_enrollment('enrolled')]
-        ProgramEnrollmentFactory.create(
-            external_user_key=enrollments[0]['student_key'],
-            program_uuid=program_uuid
+
+@ddt.ddt
+class ProgramEnrollmentViewPutTests(BaseProgramEnrollmentWriteTestsMixin, APITestCase):
+    """
+    Tests for the ProgramEnrollment view PATCH method.
+    """
+    add_uuid = True
+    success_status = status.HTTP_200_OK
+
+    def setUp(self):
+        super(ProgramEnrollmentViewPutTests, self).setUp()
+        self.request = self.client.put
+
+        self.program_uuid = '00000000-1111-2222-3333-444444444444'
+        self.curriculum_uuid = 'aaaaaaaa-1111-2222-3333-444444444444'
+
+        self.global_staff = GlobalStaffFactory.create(username='global-staff', password='password')
+        self.client.login(username=self.global_staff.username, password='password')
+
+        patch_get_user = mock.patch(
+            'lms.djangoapps.program_enrollments.api.v1.views.get_user_by_program_id',
+            autospec=True,
+            return_value=None
         )
-        enrollments.extend(bad_records)
+        self.mock_get_user = patch_get_user.start()
+        self.addCleanup(patch_get_user.stop)
 
+    def prepare_student(self, enrollment):
+        ProgramEnrollment.objects.create(
+            program_uuid=self.program_uuid,
+            curriculum_uuid=self.curriculum_uuid,
+            user=None,
+            status='pending',
+            external_user_key=enrollment[REQUEST_STUDENT_KEY],
+        )
+
+    @ddt.data(True, False)
+    def test_all_create_or_modify(self, create_users):
+        request_data = [
+            self.student_enrollment(ProgramStatuses.ENROLLED)
+            for _ in range(5)
+        ]
+        if create_users:
+            for enrollment in request_data:
+                ProgramEnrollmentFactory(
+                    program_uuid=self.program_uuid,
+                    status=ProgramStatuses.PENDING,
+                    external_user_key=enrollment[REQUEST_STUDENT_KEY],
+                )
+
+        url = self.get_url(program_uuid=self.program_uuid)
         with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
-            response = self.client.patch(url, json.dumps(enrollments), content_type='application/json')
+            response = self.client.put(url, json.dumps(request_data), content_type='application/json')
+        self.assertEqual(self.success_status, response.status_code)
+        self.assertEqual(5, len(response.data))
+        for response_status in response.data.values():
+            self.assertEqual(response_status, ProgramStatuses.ENROLLED)
 
-        self.assertEqual(422, response.status_code)
-        self.assertEqual('invalid enrollment record', response.data)
+    def test_half_create_modify(self):
+        request_data = [
+            self.student_enrollment(ProgramStatuses.ENROLLED, 'learner-01'),
+            self.student_enrollment(ProgramStatuses.ENROLLED, 'learner-02'),
+            self.student_enrollment(ProgramStatuses.ENROLLED, 'learner-03'),
+            self.student_enrollment(ProgramStatuses.ENROLLED, 'learner-04'),
+        ]
+        ProgramEnrollmentFactory(
+            program_uuid=self.program_uuid,
+            status=ProgramStatuses.PENDING,
+            external_user_key='learner-03',
+        )
+        ProgramEnrollmentFactory(
+            program_uuid=self.program_uuid,
+            status=ProgramStatuses.PENDING,
+            external_user_key='learner-04',
+        )
+
+        url = self.get_url(program_uuid=self.program_uuid)
+        with mock.patch('lms.djangoapps.program_enrollments.api.v1.views.get_programs', autospec=True):
+            response = self.client.put(url, json.dumps(request_data), content_type='application/json')
+        self.assertEqual(self.success_status, response.status_code)
+        self.assertEqual(4, len(response.data))
+        for response_status in response.data.values():
+            self.assertEqual(response_status, ProgramStatuses.ENROLLED)
 
 
 @ddt.ddt
@@ -1738,8 +1745,8 @@ class ProgramCourseEnrollmentOverviewViewTests(ProgramCacheTestCaseMixin, Shared
 
         course_run_overview = response.data['course_runs'][0]
 
-        self.assertEqual(course_run_overview['start_date'], '2018-12-31T05:00:00Z')
-        self.assertEqual(course_run_overview['end_date'], '2019-01-02T05:00:00Z')
+        self.assertEqual(course_run_overview['start_date'], '2018-12-31T00:00:00Z')
+        self.assertEqual(course_run_overview['end_date'], '2019-01-02T00:00:00Z')
 
         # course run end date may not exist
         self.course_overview.end = None

@@ -17,22 +17,24 @@ Common traits:
 # and throws spurious errors. Therefore, we disable invalid-name checking.
 # pylint: disable=invalid-name
 
+from __future__ import absolute_import
+
 import codecs
 import datetime
-import yaml
-
 import os
-import dateutil
 
+import dateutil
+import yaml
 from corsheaders.defaults import default_headers as corsheaders_default_headers
-from path import Path as path
-from xmodule.modulestore.modulestore_settings import convert_module_store_setting_if_needed
-from openedx.core.djangoapps.plugins import plugin_settings, constants as plugin_constants
 from django.core.exceptions import ImproperlyConfigured
+from path import Path as path
+
+from openedx.core.djangoapps.plugins import plugin_settings, constants as plugin_constants
+from openedx.core.lib.derived import derive_settings
+from openedx.core.lib.logsettings import get_logger_config
+from xmodule.modulestore.modulestore_settings import convert_module_store_setting_if_needed
 
 from .common import *
-from openedx.core.lib.derived import derive_settings  # pylint: disable=wrong-import-order
-from openedx.core.lib.logsettings import get_logger_config  # pylint: disable=wrong-import-order
 
 
 def get_env_setting(setting):
@@ -295,7 +297,7 @@ CELERY_QUEUES.update(
     {
         alternate: {}
         for alternate in ALTERNATE_QUEUES
-        if alternate not in CELERY_QUEUES.keys()
+        if alternate not in list(CELERY_QUEUES.keys())
     }
 )
 
@@ -427,6 +429,9 @@ NOTIFICATION_EMAIL_EDX_LOGO = ENV_TOKENS.get('NOTIFICATION_EMAIL_EDX_LOGO', NOTI
 # but it is highly recommended that this is True for enviroments accessed
 # by end users.
 CSRF_COOKIE_SECURE = ENV_TOKENS.get('CSRF_COOKIE_SECURE', False)
+
+# Determines which origins are trusted for unsafe requests eg. POST requests.
+CSRF_TRUSTED_ORIGINS = ENV_TOKENS.get('CSRF_TRUSTED_ORIGINS', [])
 
 # Whitelist of domains to which the login/logout pages will redirect.
 LOGIN_REDIRECT_WHITELIST = ENV_TOKENS.get('LOGIN_REDIRECT_WHITELIST', LOGIN_REDIRECT_WHITELIST)
@@ -803,8 +808,8 @@ FACEBOOK_APP_SECRET = AUTH_TOKENS.get("FACEBOOK_APP_SECRET")
 FACEBOOK_APP_ID = AUTH_TOKENS.get("FACEBOOK_APP_ID")
 
 XBLOCK_SETTINGS = ENV_TOKENS.get('XBLOCK_SETTINGS', {})
-XBLOCK_SETTINGS.setdefault("VideoDescriptor", {})["licensing_enabled"] = FEATURES.get("LICENSING", False)
-XBLOCK_SETTINGS.setdefault("VideoModule", {})['YOUTUBE_API_KEY'] = AUTH_TOKENS.get('YOUTUBE_API_KEY', YOUTUBE_API_KEY)
+XBLOCK_SETTINGS.setdefault("VideoBlock", {})["licensing_enabled"] = FEATURES.get("LICENSING", False)
+XBLOCK_SETTINGS.setdefault("VideoBlock", {})['YOUTUBE_API_KEY'] = AUTH_TOKENS.get('YOUTUBE_API_KEY', YOUTUBE_API_KEY)
 
 ##### VIDEO IMAGE STORAGE #####
 VIDEO_IMAGE_SETTINGS = ENV_TOKENS.get('VIDEO_IMAGE_SETTINGS', VIDEO_IMAGE_SETTINGS)
@@ -1129,3 +1134,7 @@ derive_settings(__name__)
 ######################### Overriding custom enrollment roles ###############
 
 MANUAL_ENROLLMENT_ROLE_CHOICES = ENV_TOKENS.get('MANUAL_ENROLLMENT_ROLE_CHOICES', MANUAL_ENROLLMENT_ROLE_CHOICES)
+
+########################## limiting dashboard courses ######################
+
+DASHBOARD_COURSE_LIMIT = ENV_TOKENS.get('DASHBOARD_COURSE_LIMIT', None)

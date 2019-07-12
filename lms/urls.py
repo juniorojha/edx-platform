@@ -2,16 +2,18 @@
 URLs for LMS
 """
 
+from __future__ import absolute_import
+
+from config_models.views import ConfigurationModelCurrentAPIView
 from django.conf import settings
 from django.conf.urls import include, url
 from django.conf.urls.static import static
 from django.contrib.admin import autodiscover as django_autodiscover
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic.base import RedirectView
-from rest_framework_swagger.views import get_swagger_view
+from ratelimitbackend import admin
 
 from branding import views as branding_views
-from config_models.views import ConfigurationModelCurrentAPIView
 from courseware.masquerade import handle_ajax as courseware_masquerade_handle_ajax
 from courseware.module_render import handle_xblock_callback, handle_xblock_callback_noauth, xblock_view, xqueue_callback
 from courseware.views import views as courseware_views
@@ -42,8 +44,8 @@ from openedx.core.djangoapps.programs.models import ProgramsApiConfig
 from openedx.core.djangoapps.self_paced.models import SelfPacedConfiguration
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangoapps.verified_track_content import views as verified_track_content_views
+from openedx.core.openapi import schema_view
 from openedx.features.enterprise_support.api import enterprise_enabled
-from ratelimitbackend import admin
 from static_template_view import views as static_template_view_views
 from staticbook import views as staticbook_views
 from student import views as student_views
@@ -964,7 +966,9 @@ if settings.BRANCH_IO_KEY:
 
 if settings.FEATURES.get('ENABLE_API_DOCS'):
     urlpatterns += [
-        url(r'^api-docs/$', get_swagger_view(title='LMS API')),
+        url(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+        url(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+        url(r'^api-docs/$', schema_view.with_ui('swagger', cache_timeout=0)),
     ]
 
 # edx-drf-extensions csrf app

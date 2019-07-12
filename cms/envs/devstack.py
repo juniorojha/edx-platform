@@ -108,6 +108,10 @@ def should_show_debug_toolbar(request):
 DEBUG_TOOLBAR_MONGO_STACKTRACES = False
 
 
+########################### API DOCS #################################
+
+FEATURES['ENABLE_API_DOCS'] = True
+
 ################################ MILESTONES ################################
 FEATURES['MILESTONES_APP'] = True
 
@@ -118,7 +122,7 @@ FEATURES['ENTRANCE_EXAMS'] = True
 ################################ COURSE LICENSES ################################
 FEATURES['LICENSING'] = True
 # Needed to enable licensing on video modules
-XBLOCK_SETTINGS.update({'VideoDescriptor': {'licensing_enabled': True}})
+XBLOCK_SETTINGS.update({'VideoBlock': {'licensing_enabled': True}})
 
 ################################ SEARCH INDEX ################################
 FEATURES['ENABLE_COURSEWARE_INDEX'] = True

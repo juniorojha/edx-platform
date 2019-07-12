@@ -96,7 +96,7 @@ class StudentModule(models.Model):
 
     # Key used to share state. This is the XBlock usage_id
     module_state_key = UsageKeyField(max_length=255, db_column='module_id')
-    student = models.ForeignKey(User, db_index=True, on_delete=models.CASCADE)
+    student = models.ForeignKey(User, db_index=True, db_constraint=False, on_delete=models.CASCADE)
 
     course_id = CourseKeyField(max_length=255, db_index=True)
 
@@ -242,7 +242,7 @@ class StudentModuleHistory(BaseStudentModuleHistory):
         app_label = "courseware"
         get_latest_by = "created"
 
-    student_module = models.ForeignKey(StudentModule, db_index=True, on_delete=models.CASCADE)
+    student_module = models.ForeignKey(StudentModule, db_index=True, db_constraint=False, on_delete=models.CASCADE)
 
     def __unicode__(self):
         return unicode(repr(self))

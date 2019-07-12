@@ -31,7 +31,7 @@ from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.core.cache import cache
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db import IntegrityError, models
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Index
 from django.db.models.signals import post_save, pre_save
 from django.db.utils import ProgrammingError
 from django.dispatch import receiver
@@ -61,6 +61,7 @@ from courseware.models import (
     OrgDynamicUpgradeDeadlineConfiguration
 )
 from lms.djangoapps.certificates.models import GeneratedCertificate
+from lms.djangoapps.verify_student.models import SoftwareSecurePhotoVerification
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 import openedx.core.djangoapps.django_comment_common.comment_client as cc
 from openedx.core.djangoapps.enrollments.api import _default_course_mode
@@ -1147,7 +1148,8 @@ class CourseEnrollment(models.Model):
     MODE_CACHE_NAMESPACE = u'CourseEnrollment.mode_and_active'
 
     class Meta(object):
-        unique_together = (('user', 'course'),)
+        unique_together = (('user', 'course'), )
+        indexes = [Index(fields=['user', '-created'])]
         ordering = ('user', 'course')
 
     def __init__(self, *args, **kwargs):
@@ -1610,7 +1612,7 @@ class CourseEnrollment(models.Model):
         return cls.objects.filter(user=user, is_active=1).select_related('user')
 
     @classmethod
-    def enrollments_for_user_with_overviews_preload(cls, user):  # pylint: disable=invalid-name
+    def enrollments_for_user_with_overviews_preload(cls, user, courses_limit=None):  # pylint: disable=invalid-name
         """
         List of user's CourseEnrollments, CourseOverviews preloaded if possible.
 
@@ -1625,7 +1627,12 @@ class CourseEnrollment(models.Model):
         The name of this method is long, but was the end result of hashing out a
         number of alternatives, so pylint can stuff it (disable=invalid-name)
         """
-        enrollments = list(cls.enrollments_for_user(user))
+
+        if courses_limit:
+            enrollments = cls.enrollments_for_user(user).order_by('-created')[:courses_limit]
+        else:
+            enrollments = cls.enrollments_for_user(user)
+
         overviews = CourseOverview.get_from_ids_if_exists(
             enrollment.course_id for enrollment in enrollments
         )
@@ -2053,6 +2060,19 @@ def invalidate_enrollment_mode_cache(sender, instance, **kwargs):  # pylint: dis
     cache.delete(cache_key)
 
 
+@receiver(models.signals.post_save, sender=CourseEnrollment)
+def update_expiry_email_date(sender, instance, **kwargs):  # pylint: disable=unused-argument
+    """
+    If the user has enrolled in verified track of a course and has expired ID
+    verification then send email to get the ID verified by setting the
+    expiry_email_date field.
+    """
+    email_config = getattr(settings, 'VERIFICATION_EXPIRY_EMAIL', {'DAYS_RANGE': 1, 'RESEND_DAYS': 15})
+
+    if instance.mode == CourseMode.VERIFIED:
+        SoftwareSecurePhotoVerification.update_expiry_email_date_for_user(instance.user, email_config)
+
+
 class ManualEnrollmentAudit(models.Model):
     """
     Table for tracking which enrollments were performed through manual enrollment.
@@ -2400,6 +2420,10 @@ def enforce_single_login(sender, request, user, signal, **kwargs):    # pylint: 
 
 class DashboardConfiguration(ConfigurationModel):
     """
+    Note:
+        This model is deprecated and we should not be adding new content to it.
+        We will eventually migrate this one entry to a django setting as well.
+
     Dashboard Configuration settings.
 
     Includes configuration options for the dashboard, which impact behavior and rendering for the application.

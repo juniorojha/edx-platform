@@ -128,7 +128,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.1a\n"
 "Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
-"POT-Creation-Date: 2019-06-16 20:42+0000\n"
+"POT-Creation-Date: 2019-07-07 20:42+0000\n"
 "PO-Revision-Date: 2019-01-20 20:43+0000\n"
 "Last-Translator: Ali Işıngör <ali@artistanbul.io>, 2019\n"
 "Language-Team: Turkish (Turkey) (https://www.transifex.com/open-edx/teams/6205/tr_TR/)\n"
@@ -4822,14 +4822,6 @@ msgid "Video Stop Time"
 msgstr "Video Durma Zamanı"
 
 #: common/lib/xmodule/xmodule/video_module/video_xfields.py
-msgid "The external URL to download the video."
-msgstr "Video indirmek için harici URL"
-
-#: common/lib/xmodule/xmodule/video_module/video_xfields.py
-msgid "Download Video"
-msgstr "Video indir"
-
-#: common/lib/xmodule/xmodule/video_module/video_xfields.py
 msgid ""
 "Allow students to download versions of this video in different formats if "
 "they cannot use the edX video player or do not have access to YouTube. You "
@@ -5396,6 +5388,8 @@ msgid ""
 "© {org_name}.  All rights reserved except where noted.  edX, Open edX and "
 "their respective logos are registered trademarks of edX Inc."
 msgstr ""
+"© {org_name}.  Belirtilen yerler dışında tüm hakları saklıdır. edX, Open edX"
+" ve ilgili logoları edX Inc'in tescilli ticari markalarıdır."
 
 #. #-#-#-#-#  django-partial.po (edx-platform)  #-#-#-#-#
 #. Translators: 'Open edX' is a trademark, please keep this untranslated.
@@ -9805,6 +9799,9 @@ msgid ""
 "                    You have been enrolled in %(course_name)s\n"
 "                "
 msgstr ""
+"\n"
+"                    %(course_name)s dersine kaydoldunuz\n"
+"                "
 
 #: lms/templates/instructor/edx_ace/enrollenrolled/email/body.html
 #: lms/templates/instructor/edx_ace/enrollenrolled/email/body.txt
@@ -9860,13 +9857,11 @@ msgid "You have signed out."
 msgstr "Çıkış yaptınız."
 
 #: lms/templates/logout.html
-#, python-format
+#, python-brace-format
 msgid ""
-"If you are not redirected within 5 seconds, <a href=\"%(target)s\">click "
-"here to go to the home page</a>."
+"If you are not redirected within 5 seconds, {start_anchor}click here to go "
+"to the home page{end_anchor}."
 msgstr ""
-"5 saniye içinde yönlendirilmeniz yapılmadıysa,  <a "
-"href=\"%(target)s\">anasayfaya dönmek için lütfen buraya tıklayınız</a>."
 
 #: lms/templates/main_django.html cms/templates/base.html
 #: lms/templates/main.html
@@ -10185,14 +10180,11 @@ msgid "Create new merged version"
 msgstr "Yeni birleştirilmiş sürüm oluştur"
 
 #: lms/templates/wiki/includes/anonymous_blocked.html
-#: wiki/templates/wiki/includes/anonymous_blocked.html
-#, python-format
+#, python-brace-format
 msgid ""
-"You need to <a href=\"%(login_url)s\">log in</a> or <a "
-"href=\"%(signup_url)s\">sign up</a> to use this function."
+"You need to {anchor_start_login}log in{anchor_end} or "
+"{anchor_start_signup}sign up{anchor_end} to use this function."
 msgstr ""
-"Bu özelliği kullanmak için <a href=\"%(login_url)s\">giriş</a> ya da <a "
-"href=\"%(signup_url)s\">kayıt</a> yapmak zorundasınız."
 
 #: lms/templates/wiki/includes/anonymous_blocked.html
 msgid "You need to log in or sign up to use this function."
@@ -10209,13 +10201,12 @@ msgid "Wiki Syntax Help"
 msgstr "Wiki Yazım Kuralları Yardımı"
 
 #: lms/templates/wiki/includes/cheatsheet.html
+#, python-brace-format
 msgid ""
-"This wiki uses <strong>Markdown</strong> for styling. There are several "
-"useful guides online. See any of the links below for in-depth details:"
+"This wiki uses {start_strong}Markdown{end_strong} for styling. There are "
+"several useful guides online. See any of the links below for in-depth "
+"details:"
 msgstr ""
-"Bu wiki <strong>Markdown</strong> işaretleme dilini kullanıyor. Çevrimiçi "
-"çeşitli yardımcı kılavuzlar mevcut. Bu işin derinliklerini öğrenmek "
-"istiyorsan aşağıdaki bağlantılara göz atabilirsin:"
 
 #: lms/templates/wiki/includes/cheatsheet.html
 msgid "Markdown: Basics"
@@ -11620,10 +11611,6 @@ msgid "The email address you used to register with {platform_name}"
 msgstr ""
 " {platform_name} sistemine kayıt olurken kullandığınız e-posta adresidir."
 
-#: openedx/core/djangoapps/user_api/api.py lms/templates/login.html
-msgid "Remember me"
-msgstr "Beni hatırla"
-
 #. Translators: These instructions appear on the registration form,
 #. immediately
 #. below a field meant to hold the user's email address.
@@ -12250,6 +12237,13 @@ msgstr ""
 
 #: openedx/features/discounts/models.py
 msgid "Disabled"
+msgstr ""
+
+#: openedx/features/discounts/utils.py
+#, python-brace-format
+msgid ""
+"{s_sr}Original price: {s_op}{original_price}{e_p}, discount price: "
+"{e_sr}{formatted_discount_price}"
 msgstr ""
 
 #: openedx/features/enterprise_support/api.py
@@ -13513,6 +13507,14 @@ msgid "Dashboard"
 msgstr "Ana Panel"
 
 #: lms/templates/dashboard.html themes/edx.org/lms/templates/dashboard.html
+msgid "results successfully populated,"
+msgstr ""
+
+#: lms/templates/dashboard.html themes/edx.org/lms/templates/dashboard.html
+msgid "Click to load all enrolled courses"
+msgstr ""
+
+#: lms/templates/dashboard.html themes/edx.org/lms/templates/dashboard.html
 msgid "You are not enrolled in any courses yet."
 msgstr "Henüz bir derse kayıt olmadınız."
 
@@ -13655,7 +13657,7 @@ msgstr "Harici Kimlik Denetleme başarısız oldu"
 
 #: lms/templates/footer.html
 msgid "organization logo"
-msgstr ""
+msgstr "kurum logosu"
 
 #: lms/templates/forgot_password_modal.html
 msgid ""
@@ -13878,7 +13880,7 @@ msgstr "{platform_name} platformuna hoş geldiniz"
 #. untranslated. See http://open.edx.org for more information.
 #: lms/templates/index_overlay.html
 msgid "It works! Powered by Open edX{registered_trademark}"
-msgstr ""
+msgstr "Çalışıyor! İçinde Open edX{registered_trademark} Var"
 
 #: lms/templates/invalid_email_key.html
 msgid "Invalid email change key"
@@ -13991,16 +13993,9 @@ msgstr "{platform_name} ortamında oturum açarken hata oluştu."
 #: lms/templates/login.html
 msgid ""
 "Please provide the following information to log into your {platform_name} "
-"account. Required fields are noted by <strong class=\"indicator\">bold text "
-"and an asterisk (*)</strong>."
+"account. Required fields are noted by {strong_start}bold text and an "
+"asterisk (*){strong_end}."
 msgstr ""
-"{platform_name} hesabınıza giriş yapmak için lütfen aşağıdaki bilgileri "
-"tamamlayın. Gerekli kısımlar  <strong class=\"indicator\"> (*) ve koyu "
-"yazıyla vurgulanmıştır </strong>."
-
-#: lms/templates/login.html
-msgid "Account Preferences"
-msgstr "Hesap Ayarları"
 
 #: lms/templates/login.html
 msgid "Sign in with {provider_name}"
@@ -14236,7 +14231,7 @@ msgstr "{provider_name} ile kayıt ol"
 msgid "Create your own {platform_name} account below"
 msgstr "Kendi {platform_name} hesabınızı oluşturun "
 
-#: lms/templates/register-form.html lms/templates/register-shib.html
+#: lms/templates/register-form.html
 #: themes/stanford-style/lms/templates/register-form.html
 #: themes/stanford-style/lms/templates/register-shib.html
 msgid ""
@@ -14357,6 +14352,12 @@ msgstr " {platform_name} Hesabımı Güncelleyin"
 #: themes/stanford-style/lms/templates/register-shib.html
 msgid "Welcome {username}!  Please set your preferences below"
 msgstr "Hoş geldin, {username}! Lütfen tercihlerinizi aşağıda işaretleyin"
+
+#: lms/templates/register-shib.html
+msgid ""
+"Required fields are noted by {strong_start}bold text and an asterisk "
+"(*){strong_end}."
+msgstr ""
 
 #: lms/templates/register-shib.html lms/templates/signup_modal.html
 #: themes/stanford-style/lms/templates/register-shib.html
@@ -14513,8 +14514,8 @@ msgid "e.g. Your Name (for certificates)"
 msgstr "ör. İsminiz (sertifikada gözükecek)"
 
 #: lms/templates/signup_modal.html
-msgid "<i>Welcome</i> {name}"
-msgstr "<i>Hoşgeldiniz</i> {name}"
+msgid "{start_li}Welcome{end_li} {name}"
+msgstr "{start_li}Hoş geldin{end_li} {name}"
 
 #: lms/templates/signup_modal.html
 msgid "Full Name *"
@@ -16342,7 +16343,7 @@ msgstr ""
 
 #: lms/templates/courseware/course_about.html
 msgid "Enroll Now"
-msgstr ""
+msgstr "Hemen Kaydol"
 
 #: lms/templates/courseware/course_about.html
 msgid "View About Page in studio"
@@ -18317,6 +18318,7 @@ msgid "Journals"
 msgstr ""
 
 #: lms/templates/header/navbar-authenticated.html
+#: themes/edx.org/lms/templates/header/navbar-authenticated.html
 msgid "Discover New"
 msgstr "Dersleri Keşfet"
 
@@ -20939,7 +20941,7 @@ msgstr ""
 
 #: lms/templates/support/feature_based_enrollments.html
 msgid "Course Duration Limits"
-msgstr ""
+msgstr "Ders Süresi Sınırları"
 
 #: lms/templates/support/feature_based_enrollments.html
 msgid "Is Enabled"
@@ -26395,6 +26397,15 @@ msgstr "Kök madde"
 #: wiki/templates/wiki/article/create_root.html
 msgid "Create root"
 msgstr "Kök oluştur"
+
+#: wiki/templates/wiki/includes/anonymous_blocked.html
+#, python-format
+msgid ""
+"You need to <a href=\"%(login_url)s\">log in</a> or <a "
+"href=\"%(signup_url)s\">sign up</a> to use this function."
+msgstr ""
+"Bu özelliği kullanmak için <a href=\"%(login_url)s\">giriş</a> ya da <a "
+"href=\"%(signup_url)s\">kayıt</a> yapmak zorundasınız."
 
 #: wiki/templates/wiki/includes/anonymous_blocked.html
 msgid "You need to log in og sign up to use this function."
