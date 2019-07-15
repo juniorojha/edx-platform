@@ -29,6 +29,7 @@
 # Thắng Trần <tmt111295@gmail.com>, 2019
 # Theodora. Tôn Nữ Quý Thiện <thien.tonnu1001@gmail.com>, 2015
 # Trung V. Nguyen <trung.ngvan@gmail.com>, 2015
+# Vu Bach, 2019
 # #-#-#-#-#  djangojs-studio.po (edx-platform)  #-#-#-#-#
 # edX community translations have been downloaded from Vietnamese (http://www.transifex.com/open-edx/edx-platform/language/vi/).
 # Copyright (C) 2019 EdX
@@ -104,7 +105,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: edx-platform\n"
 "Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
-"POT-Creation-Date: 2019-07-07 20:42+0000\n"
+"POT-Creation-Date: 2019-07-14 20:42+0000\n"
 "PO-Revision-Date: 2019-04-25 10:55+0000\n"
 "Last-Translator: Waheed Ahmed <waheed@edx.org>\n"
 "Language-Team: Vietnamese (http://www.transifex.com/open-edx/edx-platform/language/vi/)\n"
