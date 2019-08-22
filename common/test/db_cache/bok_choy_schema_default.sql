@@ -441,7 +441,7 @@ CREATE TABLE `auth_userprofile` (
   `bio` varchar(3000) DEFAULT NULL,
   `profile_image_uploaded_at` datetime(6) DEFAULT NULL,
   `user_id` int(11) NOT NULL,
-  `secondary_email` varchar(254) NOT NULL,
+  `secondary_email` varchar(254) NOT NULL DEFAULT 'mydefaultemail@gmail.com',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`),
   KEY `auth_userprofile_b068931c` (`name`),
